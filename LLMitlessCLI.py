@@ -48,6 +48,7 @@ LLM_MODEL = resolve_llm_model(_config["model"])
 PRINT_DEBUG = _config.get("print_debug", False)
 PRINT_TERMINAL = _config.get("print_terminal", False)
 PRINT_THINKING = _config.get("print_thinking", False)
+LOAD_CONVERSATION = _config.get("load_conversation", True)
 
 CONVO_FILE = "conversation.json"
 CURRENT_DIR = os.path.expanduser("~")
@@ -275,7 +276,7 @@ def tool_fetch_page(url: str) -> str:
         return f"Fetch error: {e}"
 
 def tool_view_image(path: str) -> str:
-    """Load a local image file so you can analyse its contents.
+    """Load a local image file so you can analyse its contents. Keep it short
 
     Args:
       path: Absolute or relative path to the image file.
@@ -349,7 +350,7 @@ def run_assistant_turn():
         save_conversation()
 
         if message.content:
-            print(f"{COLOR_AI}[AI]{COLOR_RESET}\t{message.content.strip()}\n", end="", flush=True)
+            print(f"{COLOR_AI}[LLM]{COLOR_RESET}\t{message.content.strip()}\n", end="", flush=True)
 
         if tool_calls == [] and (not message.thinking or (message.thinking and message.thinking)):
             return        
@@ -379,7 +380,7 @@ def run_assistant_turn():
 
 if __name__ == "__main__":
     # Load existing conversation on startup
-    if load_conversation():
+    if LOAD_CONVERSATION and load_conversation():
         print("Loaded previous conversation. Type 'r' and enter to start fresh.")
         load_dir()
     else:
