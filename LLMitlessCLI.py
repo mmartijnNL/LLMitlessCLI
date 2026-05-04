@@ -1,9 +1,44 @@
-import subprocess
-import ollama
+import importlib
 import json
 import os
 import platform
+import subprocess
 import sys
+
+
+def ensure_pip_available():
+    try:
+        import pip  # noqa: F401
+    except ImportError:
+        import ensurepip
+
+        ensurepip.bootstrap(upgrade=True)
+
+
+def install_python_package(package_name: str):
+    print(f"Installing missing dependency: {package_name}")
+    ensure_pip_available()
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            package_name,
+        ]
+    )
+
+
+def import_or_install(module_name: str, package_name: str | None = None):
+    try:
+        return importlib.import_module(module_name)
+    except ImportError:
+        install_python_package(package_name or module_name)
+        return importlib.import_module(module_name)
+
+
+ollama = import_or_install("ollama")
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -184,7 +219,7 @@ def tool_web_search(query: str, max_results: int = 5) -> str:
       str: Search results with titles, URLs, and snippets.
     """
     try:
-        from ddgs import DDGS
+        DDGS = import_or_install("ddgs", "ddgs").DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
         if not results:
@@ -193,8 +228,6 @@ def tool_web_search(query: str, max_results: int = 5) -> str:
         for i, r in enumerate(results, 1):
             output.append(f"{i}. {r.get('title', 'No title')}\n   URL: {r.get('href', '')}\n   {r.get('body', '')}")
         return "\n\n".join(output)
-    except ImportError:
-        return "Error: ddgs not installed. Run: pip install ddgs"
     except Exception as e:
         return f"Search error: {e}"
 
@@ -208,7 +241,7 @@ def tool_fetch_page(url: str) -> str:
       str: The text content of the page (truncated to 8000 chars if too long).
     """
     try:
-        import requests
+                requests = import_or_install("requests")
         from html.parser import HTMLParser
 
         class _TextExtractor(HTMLParser):
@@ -237,8 +270,6 @@ def tool_fetch_page(url: str) -> str:
         if len(content) > 8000:
             content = content[:8000] + "\n...[truncated]"
         return content if content else "[No readable content found]"
-    except ImportError:
-        return "Error: requests not installed. Run: pip install requests"
     except Exception as e:
         return f"Fetch error: {e}"
 

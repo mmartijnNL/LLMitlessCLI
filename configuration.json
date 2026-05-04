@@ -1,0 +1,7 @@
+{
+  "model": "gemma4:e4b",
+  "name": "AITA (Artificially Intelligent Terminal Assistant)",
+  "print_debug": false,
+  "print_terminal": false,
+  "print_thinking": false
+}
