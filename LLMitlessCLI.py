@@ -274,7 +274,28 @@ def tool_fetch_page(url: str) -> str:
     except Exception as e:
         return f"Fetch error: {e}"
 
-TOOLS = [tool_run_command, tool_web_search, tool_fetch_page]
+def tool_view_image(path: str) -> str:
+    """Load a local image file so you can analyse its contents.
+
+    Args:
+      path: Absolute or relative path to the image file.
+
+    Returns:
+      str: Confirmation that the image is ready, or an error message.
+    """
+    expanded = os.path.expanduser(path.strip())
+    resolved = expanded if os.path.isabs(expanded) else os.path.normpath(os.path.join(CURRENT_DIR, expanded))
+    if not os.path.isfile(resolved):
+        return f"Error: file not found: {resolved}"
+    
+    img_message: dict = {"role": "user", "content": "[images attached for your analysis]"}
+    img_message["images"] = [resolved]
+    conversation.append(img_message)
+
+    print_debug("VIEW IMAGE", resolved)
+    return None
+
+TOOLS = [tool_run_command, tool_web_search, tool_fetch_page, tool_view_image]
 
 def os_details():
     desktopSession = subprocess.run("echo $DESKTOP_SESSION", shell=True, text=True, capture_output=True)
@@ -302,7 +323,7 @@ conversation = [system]
 def run_assistant_turn():
     # loop so to chain commands
     while True:
-        print_debug("TO LLM", conversation[-1]["content"] if conversation else "")
+        print_debug("TO LLM", conversation[-1] if conversation else "")
         print(f"{COLOR_DEBUG}...{COLOR_RESET}", end="", flush=True)
 
         sys.stdout.flush()
@@ -343,16 +364,18 @@ def run_assistant_turn():
                 tool_output = tool_web_search(**tool_args)
             elif tool_name == "tool_fetch_page":
                 tool_output = tool_fetch_page(**tool_args)
+            elif tool_name == "tool_view_image":
+                tool_output = tool_view_image(**tool_args)
             else:
                 tool_output = f"exit_code: 1\nUnknown tool: {tool_name}"
-
-            conversation.append(
-                {
-                    "role": "tool",
-                    "tool_name": tool_name,
-                    "content": tool_output,
-                }
-            )
+            if tool_output is not None:
+                conversation.append(
+                    {
+                        "role": "tool",
+                        "tool_name": tool_name,
+                        "content": tool_output,
+                    }
+                )
 
 if __name__ == "__main__":
     # Load existing conversation on startup
