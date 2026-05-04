@@ -13,10 +13,10 @@ An agentic layer on top of Ollama that can:
 - search the web and feed results directly into terminal actions
 
 ## requirements
-- Linux (probably) 
+- Linux (probably)
 - Ollama running locally
 
 ## warning
 LLMitlessCLI executes LLM-generated commands directly on your system without confirmation, including destructive ones.
 
-It is partly a joke. 
+LLMitlessCLI is vibecoded by someone with no Python experience. It’s only partly a joke, but fully real enough to break things.
