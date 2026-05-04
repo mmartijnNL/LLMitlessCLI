@@ -15,6 +15,7 @@ An agentic layer on top of Ollama that can:
 ## requirements
 - Linux (probably)
 - Ollama running locally
+- at least 1 model installed
 
 ## warning
 LLMitlessCLI executes LLM-generated commands directly on your system without confirmation, including destructive ones.

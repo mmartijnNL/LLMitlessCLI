@@ -38,9 +38,10 @@ def resolve_llm_model(configured_model: str) -> str:
                 return model
     except Exception:
         pass
-
-    return configured_model
-
+    print_error("No model specified in configuration and failed to detect default model from 'ollama list'. Please specify a model in configuration.json.")
+    input("Press Enter to exit...")
+    sys.exit(1)
+    return "default"
 
 LLM_MODEL = resolve_llm_model(_config["model"])
 
