@@ -1,5 +1,5 @@
 {
-  "model": "gemma4:e4b",
+  "model": "default",
   "name": "LLMitlessCLI",
   "print_debug": false,
   "print_terminal": false,

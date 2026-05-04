@@ -10,8 +10,49 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, "configuration.json"), "r") as _cfg_file:
     _config = json.load(_cfg_file)
 
-LLM_MODEL = _config["model"]
 ASSISTANT_NAME = _config["name"]
+
+
+def _parse_first_model_from_ollama_table(command_output: str) -> str | None:
+    lines = [line.strip() for line in command_output.splitlines() if line.strip()]
+    for line in lines[1:]:
+        columns = line.split()
+        if columns:
+            return columns[0]
+    return None
+
+
+def resolve_llm_model(configured_model: str) -> str:
+    if configured_model.strip().lower() != "default":
+        return configured_model
+
+    try:
+        installed_models = subprocess.run(
+            ["ollama", "list"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        running_model = _parse_first_model_from_ollama_table(installed_models.stdout)
+        if running_model:
+            return running_model
+
+        installed_models = subprocess.run(
+            ["ollama", "list"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        installed_model = _parse_first_model_from_ollama_table(installed_models.stdout)
+        if installed_model:
+            return installed_model
+    except Exception:
+        pass
+
+    return configured_model
+
+
+LLM_MODEL = resolve_llm_model(_config["model"])
 
 PRINT_DEBUG = _config.get("print_debug", False)
 PRINT_TERMINAL = _config.get("print_terminal", False)
@@ -268,6 +309,7 @@ system = {
 conversation = [system]
 
 def run_assistant_turn():
+    # loop so to chain commands
     while True:
         print_debug("TO LLM", conversation[-1]["content"] if conversation else "")
         print(f"{COLOR_DEBUG}...{COLOR_RESET}", end="", flush=True)
@@ -324,12 +366,14 @@ def run_assistant_turn():
 if __name__ == "__main__":
     # Load existing conversation on startup
     if load_conversation():
-        print("Loaded previous conversation. Type 'reset' to start fresh.")
+        print("Loaded previous conversation. Type 'r' and enter to start fresh.")
         load_dir()
     else:
         print(f"{COLOR_AI}[NEW CONVERSATION]{COLOR_RESET}")
         
+    print_debug("LLM_MODEL", LLM_MODEL)
 
+    # Main interaction loop
     while True:
         user_input = input(f"{COLOR_USER}[YOU] \t{COLOR_RESET}")
 
@@ -369,8 +413,8 @@ if __name__ == "__main__":
             print(
                 """Commands:
                 (r)eset - Clear conversation history 
+                terminal on/off - Enable/Disable printing terminal commands and output
                 debug on/off - Enable/Disable debug output
-                terminal on/off - Enable/Disable debug output
                 thinking on/off - Enable/Disable thinking messages
                 """)
             continue
