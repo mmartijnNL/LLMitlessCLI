@@ -27,25 +27,15 @@ def resolve_llm_model(configured_model: str) -> str:
         return configured_model
 
     try:
-        installed_models = subprocess.run(
+        result = subprocess.run(
             ["ollama", "list"],
             text=True,
             capture_output=True,
-            check=False,
         )
-        running_model = _parse_first_model_from_ollama_table(installed_models.stdout)
-        if running_model:
-            return running_model
-
-        installed_models = subprocess.run(
-            ["ollama", "list"],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        installed_model = _parse_first_model_from_ollama_table(installed_models.stdout)
-        if installed_model:
-            return installed_model
+        if result.returncode == 0:
+            model = _parse_first_model_from_ollama_table(result.stdout)
+            if model:
+                return model
     except Exception:
         pass
 

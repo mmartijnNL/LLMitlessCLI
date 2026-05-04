@@ -4,5 +4,5 @@
   "print_debug": false,
   "print_terminal": false,
   "print_thinking": false,
-  "auto_install": true
+  "auto_install": false
 }

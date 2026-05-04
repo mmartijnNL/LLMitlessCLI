@@ -19,4 +19,4 @@ An agentic layer on top of Ollama that can:
 ## warning
 LLMitlessCLI executes LLM-generated commands directly on your system without confirmation, including destructive ones.
 
-LLMitlessCLI is vibecoded by someone with no Python experience. It’s only partly a joke, but fully real enough to break things.
+LLMitlessCLI is vibecoded by someone with no Python or Linux experience. It’s only partly a joke, but real enough to break things.
