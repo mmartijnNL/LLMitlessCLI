@@ -3,5 +3,6 @@
   "name": "AITA (Artificially Intelligent Terminal Assistant)",
   "print_debug": false,
   "print_terminal": false,
-  "print_thinking": false
+  "print_thinking": false,
+  "auto_install": true
 }
