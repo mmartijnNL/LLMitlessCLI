@@ -1,3 +1,24 @@
+conversation.json
+current_dir.json
+.DS_Store
+env/
+.idea/
+# IDE and Editor files
+*.json.bak
+# Local data or temporary files
+*.log
+# OS generated files
+Pipfile.lock
+poetry.lock
+# Poetry or Pipenv
+*.pyc
+__pycache__/
+*.pyd
+*.pyo
+Thumbs.db
+.venv/
+venv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
