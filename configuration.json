@@ -1,6 +1,6 @@
 {
   "model": "gemma4:e4b",
-  "name": "AITA (Artificially Intelligent Terminal Assistant)",
+  "name": "LLMitlessCLI",
   "print_debug": false,
   "print_terminal": false,
   "print_thinking": false,
