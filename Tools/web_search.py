@@ -1,7 +1,7 @@
 
 from typing import Any
 
-from base_tool import BaseTool
+from .base_tool import BaseTool
 from ..context import Context
 from ddgs import DDGS
 

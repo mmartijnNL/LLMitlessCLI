@@ -1,44 +1,85 @@
 import sys
 
+class Console():
+    COLOR_USER = "\033[94m"
+    COLOR_AI = "\033[92m"
+    COLOR_DEBUG = "\033[90m"
+    COLOR_THINKING = "\033[90m"
+    COLOR_ERROR = "\033[91m"
+    COLOR_RESET = "\033[0m"
 
-COLOR_USER = "\033[94m"
-COLOR_AI = "\033[92m"
-COLOR_DEBUG = "\033[90m"
-COLOR_THINKING = "\033[90m"
-COLOR_ERROR = "\033[91m"
-COLOR_RESET = "\033[0m"
+    @staticmethod
+    def InitPrinting(config):
+        global PRINT_DEBUG, PRINT_TERMINAL, PRINT_THINKING, LOAD_CONVERSATION
+        PRINT_DEBUG = config.get("print_debug", False)
+        PRINT_TERMINAL = config.get("print_terminal", False)
+        PRINT_THINKING = config.get("print_thinking", False)
+        LOAD_CONVERSATION = config.get("load_conversation", True)
 
-def InitPrinting(config):
-    global PRINT_DEBUG, PRINT_TERMINAL, PRINT_THINKING, LOAD_CONVERSATION
-    PRINT_DEBUG = config.get("print_debug", False)
-    PRINT_TERMINAL = config.get("print_terminal", False)
-    PRINT_THINKING = config.get("print_thinking", False)
-    LOAD_CONVERSATION = config.get("load_conversation", True)
+    @staticmethod
+    def set_print_debug(value: bool):
+        global PRINT_DEBUG
+        PRINT_DEBUG = value
+        print(f"Debug = {PRINT_DEBUG}")
 
-def print_debug(label, msg):
-    if PRINT_DEBUG:
-        print(f"\n{COLOR_DEBUG}[{label}]\t{msg}{COLOR_RESET}\n")
+    @staticmethod
+    def set_print_terminal(value: bool):
+        global PRINT_TERMINAL
+        PRINT_TERMINAL = value
+        print(f"Terminal = {PRINT_TERMINAL}")
 
-def print_terminal(label, msg):
-    if PRINT_TERMINAL:
-        print(f"\n{COLOR_DEBUG}[{label}]\t{msg}{COLOR_RESET}\n")
+    @staticmethod
+    def set_print_thinking(value: bool):
+        global PRINT_THINKING
+        PRINT_THINKING = value
+        print(f"Thinking = {PRINT_THINKING}")
 
-def print_llm(msg):
-    if PRINT_TERMINAL:
-        print(f"\n{COLOR_AI}[LLM]\t{msg}{COLOR_RESET}\n")
+    @staticmethod
+    def set_load_conversation(value: bool):
+        global LOAD_CONVERSATION
+        LOAD_CONVERSATION = value
+        print(f"Load Conversation = {LOAD_CONVERSATION}")
 
-def print_thinking(msg):
-    if PRINT_THINKING:
-        print(f"\n{COLOR_THINKING}[THINKING]\t{msg}{COLOR_RESET}\n")
+    @staticmethod
+    def print_debug(label, msg):
+        if PRINT_DEBUG:
+            print(f"\n{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}\n")
 
-def print_temp(msg):
-    if PRINT_THINKING:
-        print(f"{COLOR_DEBUG}...{COLOR_RESET}", end="", flush=True)
-        sys.stdout.flush()
-        print("\r", end="", flush=True)
+    @staticmethod
+    def print_terminal(label, msg):
+        if PRINT_TERMINAL:
+            print(f"\n{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}\n")
 
-def print_error(msg):
-        print(f"\n{COLOR_ERROR}[ERROR]\t{msg}{COLOR_RESET}\n")
+    @staticmethod
+    def print_llm(msg):
+        print(f"\n{Console.COLOR_AI}[LLM]{Console.COLOR_RESET}\t{msg}\n")
 
-def input_user():
-    return input(f"{COLOR_USER}[YOU]\t{COLOR_RESET}")
+    @staticmethod
+    def print_thinking(msg):
+        if PRINT_THINKING:
+            print(f"\n{Console.COLOR_THINKING}[THINKING]\t{msg}{Console.COLOR_RESET}\n")
+
+    @staticmethod
+    def print_temp(msg):
+        if PRINT_THINKING:
+            print(f"{Console.COLOR_DEBUG}...{Console.COLOR_RESET}", end="", flush=True)
+            sys.stdout.flush()
+            print("\r", end="", flush=True)
+
+    @staticmethod
+    def print_error(msg):
+        print(f"\n{Console.COLOR_ERROR}[ERROR]\t{msg}{Console.COLOR_RESET}\n")
+
+    @staticmethod
+    def input_user():
+        return input(f"{Console.COLOR_USER}[YOU]\t{Console.COLOR_RESET}")
+
+
+# Module-level aliases
+InitPrinting = Console.InitPrinting
+print_debug = Console.print_debug
+print_terminal = Console.print_terminal
+print_llm = Console.print_llm
+print_thinking = Console.print_thinking
+print_error = Console.print_error
+input_user = Console.input_user

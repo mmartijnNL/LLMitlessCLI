@@ -1,14 +1,14 @@
 import subprocess
-from Tools.view_image import ViewImage
+
 import ollama
 import json
 import os
 import platform
 import sys
 
-from Tools.web_search import WebSearch
-from context import Context
-from console import InitPrinting, input_user, print_debug, print_error, print_llm, print_terminal, print_thinking
+from .Tools import ViewImage, RunCommand, WebSearch, FetchPage
+from .context import Context
+from .console import Console, InitPrinting, input_user, print_debug, print_error, print_llm, print_terminal, print_thinking
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, "configuration.json"), "r") as _cfg_file:
@@ -43,11 +43,9 @@ def resolve_llm_model(configured_model: str) -> str:
     sys.exit(1)
     return "default"
 
-CONTEXT = Context()
-CONTEXT.assistant_name = _config["name"]
-CONTEXT.llm_model = resolve_llm_model(_config["model"])
-CONTEXT.directory = os.path.expanduser("~")
-CONTEXT.previous_directory = None
+CONTEXT = Context(conversation=[],
+                  assistant_name=_config["name"], 
+                  llm_model=resolve_llm_model(_config["model"]))
 
 InitPrinting(_config)
 
@@ -55,7 +53,7 @@ def save_conversation():
     """Save conversation to file on exit"""
     try:
         with open(CONTEXT.conversation_file, 'w') as f:
-            json.dump(conversation, f, indent=2)
+            json.dump(CONTEXT.conversation, f, indent=2)
         print_debug("SAVE", f"Conversation saved to {CONTEXT.conversation_file}")
     except Exception as e:
         print_error(f"SAVE ERROR: {str(e)}")
@@ -66,8 +64,7 @@ def load_conversation():
         return False
     try:
         with open(CONTEXT.conversation_file, 'r') as f:
-            global conversation
-            conversation = json.load(f)
+            CONTEXT.conversation = json.load(f)
         print_debug("LOAD", f"Loaded conversation from {CONTEXT.conversation_file}")
         return True
     except Exception as e:
@@ -77,7 +74,7 @@ def save_dir():
     """Save current directory to file on exit"""
     try:
         with open(CONTEXT.directory_file, 'w') as f:
-            json.dump({"current_dir": CURRENT_DIR}, f, indent=2)
+            json.dump({"current_dir": CONTEXT.directory}, f, indent=2)
         print_debug("SAVE", f"Current directory saved to {CONTEXT.directory_file}")
     except Exception as e:
         print_error(f"SAVE ERROR: {str(e)}")
@@ -88,9 +85,8 @@ def load_dir():
         return False
     try:
         with open(CONTEXT.directory_file, 'r') as f:
-            global CURRENT_DIR
             data = json.load(f)
-            CURRENT_DIR = data.get("current_dir", os.getcwd())
+            CONTEXT.directory = data.get("current_dir", os.getcwd())
         print_debug("LOAD", f"Loaded current directory from {CONTEXT.directory_file}")
         return True
     except Exception as e:
@@ -107,148 +103,9 @@ def format_message(message):
         return message.model_dump(exclude_none=True)
     return message
 
-def resolve_cd_target(raw_target: str) -> str:
-    target = raw_target.strip()
 
-    if not target or target == "~":
-        return os.path.expanduser("~")
 
-    if target == "-":
-        return PREVIOUS_DIR
-
-    expanded_target = os.path.expanduser(target)
-    if os.path.isabs(expanded_target):
-        return os.path.normpath(expanded_target)
-
-    return os.path.normpath(os.path.join(CURRENT_DIR, expanded_target))
-
-def handle_command(command: str) -> str:
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            text=True,
-            capture_output=True,
-            cwd=CURRENT_DIR,
-        )
-        output = (result.stdout or "") + (result.stderr or "")
-        returncode = result.returncode
-        return f"exit_code: {returncode}\n{output}"
-    except Exception as exc:
-        output = f"Command execution failed: {exc}"
-        print_terminal("TERMINAL OUTPUT", output)
-        return f"exit_code: 1\n{output}"
-
-def handle_command_cd(command: str) -> str:
-    _, _, raw_target = command.partition(" ")
-    target_dir = resolve_cd_target(raw_target)
-    if target_dir is None:
-        return "cd: invalid target"
-
-    if not os.path.isdir(target_dir):
-        return f"cd: no such directory: {target_dir}"
-
-    global PREVIOUS_DIR, CURRENT_DIR
-    PREVIOUS_DIR = CURRENT_DIR
-    CURRENT_DIR = target_dir
-    save_dir()
-    lsResult = handle_command("ls")
-    return  f"{target_dir} \n{lsResult}"
-
-def tool_run_command(command: str) -> str:
-    """Run a shell command on the local Linux machine.
-
-    Args:
-      command: Shell command to execute. You will get the output. The user will not see the command or the output. 
-      Use cat to read and write files, ls to inspect directories, cd to change directories, and other standard Linux commands as needed.
-      You can sudo, the user will be prompted to enter their password if required.
-      You can use curl https://ipinfo.io/ip to get the public IP address of the machine.
-
-    Returns:
-      str: Combined execution result including exit code and stdout/stderr.
-    """
-    if not isinstance(command, str) or not command.strip():
-        return "exit_code: 1\nNo command provided."
-
-    print_terminal("RUN", command)
-
-    if command.startswith("cd") and (command == "cd" or command[2].isspace()):
-        output = handle_command_cd(command)
-    else:
-        output = handle_command(command)
-
-    if not output.strip():
-        output = "[no output]"
-
-    print_terminal("TERMINAL OUTPUT", output)
-    return output
-
-def tool_fetch_page(url: str) -> str:
-    """Fetch and return the text content of a web page.
-
-    Args:
-      url: The URL to fetch.
-
-    Returns:
-      str: The text content of the page (truncated to 8000 chars if too long).
-    """
-    try:
-        import requests
-        from html.parser import HTMLParser
-
-        class _TextExtractor(HTMLParser):
-            def __init__(self):
-                super().__init__()
-                self.text_parts = []
-                self._skip = False
-            def handle_starttag(self, tag, attrs):
-                if tag in ('script', 'style', 'nav', 'footer'):
-                    self._skip = True
-            def handle_endtag(self, tag):
-                if tag in ('script', 'style', 'nav', 'footer'):
-                    self._skip = False
-            def handle_data(self, data):
-                if not self._skip:
-                    stripped = data.strip()
-                    if stripped:
-                        self.text_parts.append(stripped)
-
-        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        parser = _TextExtractor()
-        parser.feed(response.text)
-        content = "\n".join(parser.text_parts)
-        if len(content) > 8000:
-            content = content[:8000] + "\n...[truncated]"
-        return content if content else "[No readable content found]"
-    except ImportError:
-        return "Error: requests not installed. Run: pip install requests"
-    except Exception as e:
-        return f"Fetch error: {e}"
-
-def tool_view_image(path: str) -> str:
-    """Load a local image file so you can analyse its contents. Keep it short
-
-    Args:
-      path: Absolute or relative path to the image file.
-
-    Returns:
-      str: Confirmation that the image is ready, or an error message.
-    """
-    expanded = os.path.expanduser(path.strip())
-    resolved = expanded if os.path.isabs(expanded) else os.path.normpath(os.path.join(CURRENT_DIR, expanded))
-    if not os.path.isfile(resolved):
-        return f"Error: file not found: {resolved}"
-    
-    img_message: dict = {"role": "user", "content": "[images attached for your analysis]"}
-    img_message["images"] = [resolved]
-    conversation.append(img_message)
-
-    print_debug("VIEW IMAGE", resolved)
-    return None
-
-TOOLS = [WebSearch(), ViewImage()]
+TOOLS = [WebSearch(), FetchPage(), ViewImage(), RunCommand()]
 
 def os_details():
     desktopSession = subprocess.run("echo $DESKTOP_SESSION", shell=True, text=True, capture_output=True)
@@ -280,7 +137,6 @@ def run_assistant_turn():
 
         response = ollama.chat(model=CONTEXT.llm_model, messages=CONTEXT.conversation, tools=[tool.definition for tool in TOOLS])
 
-
         message = response.message
         print_debug("FROM LLM", format_message(message))
 
@@ -295,7 +151,6 @@ def run_assistant_turn():
             print_thinking(message.thinking)
             assistant_message["thinking"] = message.thinking
         CONTEXT.conversation.append(assistant_message)
-        save_conversation()
 
         if message.content:
             print_llm(message.content.strip())
@@ -320,7 +175,10 @@ def run_assistant_turn():
                     }
                 )
 
-if __name__ == "__main__":
+        save_conversation()
+        save_dir()
+
+def main():
     # Load existing conversation on startup
     if _config["load_conversation"] and load_conversation():
         print("Loaded previous conversation. Type 'r' and enter to start fresh.")
@@ -335,35 +193,29 @@ if __name__ == "__main__":
         user_input = input_user()
         if user_input.lower() == "reset" or user_input.lower() == "r":
             CONTEXT.conversation = [system]
-            CURRENT_DIR = os.path.expanduser("~")
-            PREVIOUS_DIR = None
+            CONTEXT.directory = os.path.expanduser("~")
+            CONTEXT.previous_directory = None
             print(f"[NEW CONVERSATION]")
             save_conversation()
             save_dir()
             continue
         elif user_input.lower() == "debug on":
-            PRINT_DEBUG = True
-            print(f"Debug = {PRINT_DEBUG}")
+            Console.set_print_debug(True)
             continue
         elif user_input.lower() == "debug off":
-            PRINT_DEBUG = False
-            print(f"Debug = {PRINT_DEBUG}")
+            Console.set_print_debug(False)
             continue
         elif user_input.lower() == "terminal on":
-            PRINT_TERMINAL = True
-            print(f"Terminal = {PRINT_TERMINAL}")
+            Console.set_print_terminal(True)
             continue
         elif user_input.lower() == "terminal off":
-            PRINT_TERMINAL = False
-            print(f"Terminal = {PRINT_TERMINAL}")
+            Console.set_print_terminal(False)
             continue
         elif user_input.lower() == "thinking on":
-            PRINT_THINKING = True
-            print(f"Thinking = {PRINT_THINKING}")
+            Console.set_print_thinking(True)
             continue
         elif user_input.lower() == "thinking off":
-            PRINT_THINKING = False
-            print(f"Thinking = {PRINT_THINKING}")
+            Console.set_print_thinking(False)
             continue
         elif user_input.lower() == "help" or user_input.lower() == "h":
             print(
@@ -388,3 +240,6 @@ if __name__ == "__main__":
                     "content": f"[error]\n{exc}",
                 }
             )
+
+if __name__ == "__main__":
+    main()

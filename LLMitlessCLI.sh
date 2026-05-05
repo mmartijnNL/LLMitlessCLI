@@ -37,11 +37,11 @@ fi
 # ────────────────────────────────────────────────────────────────────────────
 
 if command -v kdotool >/dev/null 2>&1; then
-	window_id=$(kdotool search --name "~ : python3 — Konsole" 2>/dev/null | head -n 1)
+	window_id=$(kdotool search --name " : python3 — Konsole" 2>/dev/null | head -n 1)
 fi
 
 if [ -n "$window_id" ]; then
 	kdotool windowactivate "$window_id"
 else
-	konsole -e "python3 \"$SCRIPT_DIR/LLMitlessCLI.py\""
+	konsole -e bash -c "cd \"$(dirname "$SCRIPT_DIR")\" && python3 -m LLMitlessCLI"
 fi
