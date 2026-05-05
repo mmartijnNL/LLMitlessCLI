@@ -21,7 +21,8 @@ class RunCommand(BaseTool):
             "function": {
                 "name": self.name,
                 "description": """Run a shell command on the local Linux machine. You will get the output. The user will not see the command or the output. 
-                                Use cat to read and write files, ls to inspect directories, cd to change directories, and other standard Linux commands as needed.
+                                You can change the working directory with cd.
+                                Use cat to read and write files, ls to inspect directories, and other standard Linux commands as needed.
                                 You can sudo, the user will be prompted to enter their password if required.
                                 You can use curl https://ipinfo.io/ip to get the public IP address of the machine.""",
                 "parameters": {
