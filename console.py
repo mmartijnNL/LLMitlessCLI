@@ -60,9 +60,9 @@ class Console():
             print(f"\n{Console.COLOR_THINKING}[THINKING]\t{msg}{Console.COLOR_RESET}\n")
 
     @staticmethod
-    def print_temp(msg):
+    def print_temp(msg = "..."):
         if PRINT_THINKING:
-            print(f"{Console.COLOR_DEBUG}...{Console.COLOR_RESET}", end="", flush=True)
+            print(f"{Console.COLOR_DEBUG}{msg}{Console.COLOR_RESET}", end="", flush=True)
             sys.stdout.flush()
             print("\r", end="", flush=True)
 
@@ -81,5 +81,6 @@ print_debug = Console.print_debug
 print_terminal = Console.print_terminal
 print_llm = Console.print_llm
 print_thinking = Console.print_thinking
+print_temp = Console.print_temp
 print_error = Console.print_error
 input_user = Console.input_user

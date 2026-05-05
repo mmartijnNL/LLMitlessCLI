@@ -66,7 +66,7 @@ class FetchPage(BaseTool):
                 {
                     "role": "tool",
                     "tool_name": self.name,
-                    "content": "\n\n".join(output),
+                    "content": output,
                 }
             )
             return output

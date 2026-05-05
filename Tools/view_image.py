@@ -1,5 +1,4 @@
 
-from importlib.resources import path
 import os
 from typing import Any
 
@@ -7,8 +6,6 @@ from .base_tool import BaseTool
 from ..context import Context
 
 class ViewImage(BaseTool):
-
-    maxResults = 5
 
     @property
     def name(self) -> str:
@@ -34,7 +31,7 @@ class ViewImage(BaseTool):
             },
         }
 
-    def invoke(self, context: Context, path: str, max_results: int = 5) -> str:
+    def invoke(self, context: Context, path: str) -> str:
 
         try:
             expanded = os.path.expanduser(path.strip())
@@ -46,5 +43,5 @@ class ViewImage(BaseTool):
             img_message["images"] = [resolved]
             context.conversation.append(img_message)
         except Exception as e:
-            return f"Search error: {e}"
+            return f"Image error: {e}"
         

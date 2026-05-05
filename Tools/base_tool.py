@@ -15,6 +15,6 @@ class BaseTool(ABC):
         pass
 
     @abstractmethod
-    def invoke(self, context: Context, args: dict[str, Any]) -> str:
+    def invoke(self, context: Context, **kwargs) -> str:
         pass
 

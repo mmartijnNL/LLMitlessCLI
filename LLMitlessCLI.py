@@ -8,7 +8,7 @@ import sys
 
 from .Tools import ViewImage, RunCommand, WebSearch, FetchPage
 from .context import Context
-from .console import Console, InitPrinting, input_user, print_debug, print_error, print_llm, print_terminal, print_thinking
+from .console import Console, InitPrinting, input_user, print_debug, print_error, print_llm, print_temp, print_thinking
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, "configuration.json"), "r") as _cfg_file:
@@ -41,7 +41,6 @@ def resolve_llm_model(configured_model: str) -> str:
     print_error("No model specified in configuration and failed to detect default model from 'ollama list'. Please specify a model in configuration.json.")
     input("Press Enter to exit...")
     sys.exit(1)
-    return "default"
 
 CONTEXT = Context(conversation=[],
                   assistant_name=_config["name"], 
@@ -93,11 +92,6 @@ def load_dir():
         print_error(f"LOAD ERROR: {str(e)}")
         return False
 
-def set_working_dir(message):
-    if hasattr(message, "model_dump"):
-        return message.model_dump(exclude_none=True)
-    return message
-
 def format_message(message):
     if hasattr(message, "model_dump"):
         return message.model_dump(exclude_none=True)
@@ -135,6 +129,7 @@ def run_assistant_turn():
     while True:
         print_debug("TO LLM", CONTEXT.conversation[-1] if CONTEXT.conversation else "")
 
+        print_temp()
         response = ollama.chat(model=CONTEXT.llm_model, messages=CONTEXT.conversation, tools=[tool.definition for tool in TOOLS])
 
         message = response.message
@@ -155,7 +150,7 @@ def run_assistant_turn():
         if message.content:
             print_llm(message.content.strip())
 
-        if tool_calls == [] and (not message.thinking or (message.thinking and message.thinking)):
+        if not tool_calls:
             return        
 
         for tool_call in tool_calls:

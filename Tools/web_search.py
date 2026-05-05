@@ -7,8 +7,6 @@ from ddgs import DDGS
 
 class WebSearch(BaseTool):
 
-    maxResults = 5
-
     @property
     def name(self) -> str:
         return "web-search"

@@ -10,8 +10,6 @@ from ..context import Context
 
 class RunCommand(BaseTool):
 
-    maxResults = 5
-
     @property
     def name(self) -> str:
         return "run_command"
