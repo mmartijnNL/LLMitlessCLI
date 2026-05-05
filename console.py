@@ -7,6 +7,7 @@ class Console():
     COLOR_THINKING = "\033[90m"
     COLOR_ERROR = "\033[91m"
     COLOR_RESET = "\033[0m"
+    _temp_active = False
 
     @staticmethod
     def InitPrinting(config):
@@ -43,36 +44,42 @@ class Console():
     @staticmethod
     def print_debug(label, msg):
         if PRINT_DEBUG:
-            print(f"\n{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}\n")
+            print(f"{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}")
 
     @staticmethod
     def print_terminal(label, msg):
         if PRINT_TERMINAL:
-            print(f"\n{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}\n")
-
-    @staticmethod
-    def print_llm(msg):
-        print(f"\n{Console.COLOR_AI}[LLM]{Console.COLOR_RESET}\t{msg}\n")
+            print(f"{Console.COLOR_DEBUG}[{label}]\t{msg}{Console.COLOR_RESET}")
 
     @staticmethod
     def print_thinking(msg):
         if PRINT_THINKING:
-            print(f"\n{Console.COLOR_THINKING}[THINKING]\t{msg}{Console.COLOR_RESET}\n")
+            print(f"{Console.COLOR_THINKING}[THINKING]\t{msg}{Console.COLOR_RESET}")
 
     @staticmethod
     def print_temp(msg = "..."):
-        if PRINT_THINKING:
-            print(f"{Console.COLOR_DEBUG}{msg}{Console.COLOR_RESET}", end="", flush=True)
-            sys.stdout.flush()
-            print("\r", end="", flush=True)
+        print(f"{Console.COLOR_DEBUG}{msg}{Console.COLOR_RESET}", end="", flush=True)
+        Console._temp_active = True
 
     @staticmethod
-    def print_error(msg):
-        print(f"\n{Console.COLOR_ERROR}[ERROR]\t{msg}{Console.COLOR_RESET}\n")
+    def _clear_temp():
+        if Console._temp_active:
+            sys.stdout.write("\r\033[K")
+            sys.stdout.flush()
+            Console._temp_active = False
+
+    @staticmethod
+    def print_llm(msg):
+        Console._clear_temp()
+        print(f"{Console.COLOR_AI}[LLM]\t{Console.COLOR_RESET}{msg}")
 
     @staticmethod
     def input_user():
         return input(f"{Console.COLOR_USER}[YOU]\t{Console.COLOR_RESET}")
+
+    @staticmethod
+    def print_error(msg):
+        print(f"{Console.COLOR_ERROR}[ERROR]\t{msg}{Console.COLOR_RESET}\n")
 
 
 # Module-level aliases
