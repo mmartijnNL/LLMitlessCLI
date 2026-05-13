@@ -4,6 +4,6 @@
   "print_debug": false,
   "print_terminal": false,
   "print_thinking": false,
-  "auto_install": false,
+  "auto_install": true,
   "load_conversation": false
 }
